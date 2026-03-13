@@ -1,0 +1,92 @@
+{
+  "name": "aem-bulk-installer",
+  "displayName": "AEM Bulk Package Installer",
+  "description": "Install multiple AEM packages or bundles from local to AEM server.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "AEM Bulk Installer",
+      "properties": {
+        "aemBulkInstaller.server.url": {
+          "type": "string",
+          "default": "http://localhost",
+          "description": "URL of the AEM server"
+        },
+        "aemBulkInstaller.server.port": {
+          "type": "string",
+          "default": "4502",
+          "description": "Port of the AEM server"
+        },
+        "aemBulkInstaller.server.username": {
+          "type": "string",
+          "default": "admin",
+          "description": "Username for AEM server"
+        },
+        "aemBulkInstaller.server.password": {
+          "type": "string",
+          "default": "admin",
+          "description": "Password for AEM server"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "aem-bulk-installer.upload",
+        "title": "AEM: Upload file(s)"
+      },
+      {
+        "command": "aem-bulk-installer.install",
+        "title": "AEM: Install file(s)"
+      },
+      {
+        "command": "aem-bulk-installer.backup",
+        "title": "AEM: Backup package(s)"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "aem-bulk-installer.upload",
+          "when": "resourceExtname == .zip || resourceExtname == .jar",
+          "group": "aem@1"
+        },
+        {
+          "command": "aem-bulk-installer.install",
+          "when": "resourceExtname == .zip || resourceExtname == .jar",
+          "group": "aem@2"
+        },
+        {
+          "command": "aem-bulk-installer.backup",
+          "when": "resourceExtname == .zip",
+          "group": "aem@3"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "18.x",
+    "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "axios": "^1.4.0",
+    "form-data": "^4.0.0",
+    "@types/adm-zip": "^0.5.0",
+    "@types/form-data": "^2.5.0",
+    "@types/axios": "^0.14.0"
+  }
+}
