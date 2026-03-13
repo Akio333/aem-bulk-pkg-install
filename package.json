@@ -3,6 +3,11 @@
   "displayName": "AEM Bulk Package Installer",
   "description": "Install multiple AEM packages or bundles from local to AEM server.",
   "version": "0.0.1",
+  "publisher": "akio333",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akio333/aem-bulk-pkg-install"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
