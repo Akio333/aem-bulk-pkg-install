@@ -11,6 +11,7 @@ A powerful Visual Studio Code extension designed for AEM (Adobe Experience Manag
 
 ## Before You Start
 
+Make sure your AEM server configuration is set up properly.
 1. Go to VS Code **Settings** (`Ctrl+,` or `Cmd+,`).
 2. Search for `AEM Bulk Installer`.
 3. Configure the following options according to your environment:
