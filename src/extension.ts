@@ -4,6 +4,8 @@ import { AemClient, AemConfig } from './aemClient';
 import { backupPackage } from './backupFlow';
 
 export function activate(context: vscode.ExtensionContext) {
+    const outputChannel = vscode.window.createOutputChannel('AEM Bulk Installer');
+    context.subscriptions.push(outputChannel);
 
     const getAemConfig = (): AemConfig => {
         const config = vscode.workspace.getConfiguration('aemBulkInstaller');
@@ -27,6 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
 
         const client = new AemClient(getAemConfig());
 
+        outputChannel.show(true);
+        outputChannel.appendLine(`--- Starting: ${actionName} ---`);
+
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `AEM: ${actionName}`,
@@ -40,15 +45,20 @@ export function activate(context: vscode.ExtensionContext) {
                 const fsPath = uris[i].fsPath;
                 const fileName = path.basename(fsPath);
                 progress.report({ message: `Processing ${fileName} (${i + 1}/${total})...`, increment: 100 / total });
+                outputChannel.appendLine(`[${i + 1}/${total}] Processing: ${fileName}...`);
                 
                 try {
                     await action(client, fsPath, path.dirname(fsPath));
                     successCount++;
+                    outputChannel.appendLine(`[${i + 1}/${total}] SUCCESS: ${fileName}`);
                 } catch (error: any) {
                     failCount++;
+                    outputChannel.appendLine(`[${i + 1}/${total}] FAILED: ${fileName} - ${error.message}`);
                     vscode.window.showErrorMessage(`Failed to process ${fileName}: ${error.message}`);
                 }
             }
+
+            outputChannel.appendLine(`--- Completed ${actionName}: ${successCount} succeeded, ${failCount} failed. ---\n`);
 
             if (failCount === 0) {
                 vscode.window.showInformationMessage(`Successfully completed ${actionName} for ${successCount} file(s).`);
@@ -80,7 +90,11 @@ export function activate(context: vscode.ExtensionContext) {
             const ext = path.extname(filePath).toLowerCase();
             if (ext === '.zip') {
                 const pkgPath = await client.uploadPackage(filePath, true);
-                await client.installPackage(pkgPath);
+                
+                outputChannel.appendLine(`    Uploading done, starting install for ${pkgPath}...`);
+                await client.installPackage(pkgPath, (msg) => {
+                    outputChannel.appendLine(msg);
+                });
             } else if (ext === '.jar') {
                 await client.installBundle(filePath);
             } else {

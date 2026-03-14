@@ -4,6 +4,7 @@
   "description": "Install multiple AEM packages or bundles from local to AEM server.",
   "version": "0.0.1",
   "publisher": "akio333",
+  "icon": "icon.jpg",
   "repository": {
     "type": "git",
     "url": "https://github.com/akio333/aem-bulk-pkg-install"
