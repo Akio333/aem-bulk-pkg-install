@@ -3,7 +3,7 @@
   "displayName": "AEM Bulk Package Installer",
   "description": "Install multiple AEM packages or bundles from local to AEM server.",
   "version": "0.1.0",
-  "publisher": "akio333",
+  "publisher": "Akio333",
   "icon": "icon.png",
   "repository": {
     "type": "git",
@@ -15,7 +15,11 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:aem-bulk-installer.upload",
+    "onCommand:aem-bulk-installer.install",
+    "onCommand:aem-bulk-installer.backup"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
