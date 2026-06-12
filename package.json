@@ -2,9 +2,9 @@
   "name": "aem-bulk-installer",
   "displayName": "AEM Bulk Package Installer",
   "description": "Install multiple AEM packages or bundles from local to AEM server.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "akio333",
-  "icon": "icon.jpg",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/akio333/aem-bulk-pkg-install"
@@ -80,7 +80,8 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "package": "npx @vscode/vsce package"
   },
   "devDependencies": {
     "@types/vscode": "^1.80.0",
