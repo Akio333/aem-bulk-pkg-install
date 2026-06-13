@@ -158,6 +158,15 @@ export class AemClient {
         }
     }
 
+    async replicatePackage(packagePath: string): Promise<void> {
+        const url = `/crx/packmgr/service/.json${packagePath}?cmd=replicate`;
+        const response = await this.client.post(url);
+
+        if (!(response.data && response.data.success)) {
+            throw new Error(`Replication failed: ${response.data ? response.data.msg : response.statusText}`);
+        }
+    }
+
     async downloadPackage(packagePath: string, destPath: string): Promise<void> {
         const url = packagePath; // e.g., /etc/packages/my_packages/test-1.0.zip
         const response = await this.client.get(url, { responseType: 'stream' });

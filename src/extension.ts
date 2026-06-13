@@ -7,27 +7,43 @@ export function activate(context: vscode.ExtensionContext) {
     const outputChannel = vscode.window.createOutputChannel('AEM Bulk Installer');
     context.subscriptions.push(outputChannel);
 
-    const getAemConfig = (): AemConfig => {
+    const getAuthorConfig = (): AemConfig => {
+        const config = vscode.workspace.getConfiguration('aemBulkInstaller');
+        const defaultUrl = config.get<string>('server.url', 'http://localhost');
+        const defaultPort = config.get<string>('server.port', '4502');
+        const defaultUsername = config.get<string>('server.username', 'admin');
+        const defaultPassword = config.get<string>('server.password', 'admin');
+
+        return {
+            url: config.get<string>('author.url') || defaultUrl,
+            port: config.get<string>('author.port') || defaultPort,
+            username: config.get<string>('author.username') || defaultUsername,
+            password: config.get<string>('author.password') || defaultPassword
+        };
+    };
+
+    const getPublishConfig = (): AemConfig => {
         const config = vscode.workspace.getConfiguration('aemBulkInstaller');
         return {
-            url: config.get<string>('server.url', 'http://localhost'),
-            port: config.get<string>('server.port', '4502'),
-            username: config.get<string>('server.username', 'admin'),
-            password: config.get<string>('server.password', 'admin')
+            url: config.get<string>('publish.url', 'http://localhost'),
+            port: config.get<string>('publish.port', '4503'),
+            username: config.get<string>('publish.username', 'admin'),
+            password: config.get<string>('publish.password', 'admin')
         };
     };
 
     const processFiles = async (
         actionName: string,
         uris: vscode.Uri[],
-        action: (client: AemClient, filePath: string, outputDir: string) => Promise<void>
+        action: (authorClient: AemClient, publishClient: AemClient, filePath: string, outputDir: string) => Promise<void>
     ) => {
         if (!uris || uris.length === 0) {
             vscode.window.showWarningMessage('No files selected.');
             return;
         }
 
-        const client = new AemClient(getAemConfig());
+        const authorClient = new AemClient(getAuthorConfig());
+        const publishClient = new AemClient(getPublishConfig());
 
         outputChannel.show(true);
         outputChannel.appendLine(`--- Starting: ${actionName} ---`);
@@ -48,7 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
                 outputChannel.appendLine(`[${i + 1}/${total}] Processing: ${fileName}...`);
                 
                 try {
-                    await action(client, fsPath, path.dirname(fsPath));
+                    await action(authorClient, publishClient, fsPath, path.dirname(fsPath));
                     successCount++;
                     outputChannel.appendLine(`[${i + 1}/${total}] SUCCESS: ${fileName}`);
                 } catch (error: any) {
@@ -71,10 +87,10 @@ export function activate(context: vscode.ExtensionContext) {
     // Upload Command
     let uploadCmd = vscode.commands.registerCommand('aem-bulk-installer.upload', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
         const urisToProcess = selectedUris || (_uri ? [_uri] : []);
-        await processFiles('Upload files', urisToProcess, async (client, filePath) => {
+        await processFiles('Upload files', urisToProcess, async (authorClient, publishClient, filePath) => {
             const ext = path.extname(filePath).toLowerCase();
             if (ext === '.zip') {
-                await client.uploadPackage(filePath, true);
+                await authorClient.uploadPackage(filePath, true);
             } else if (ext === '.jar') {
                 throw new Error('Upload without install is not supported for OSGi bundles (.jar). Use Install instead.');
             } else {
@@ -86,17 +102,17 @@ export function activate(context: vscode.ExtensionContext) {
     // Install Command
     let installCmd = vscode.commands.registerCommand('aem-bulk-installer.install', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
          const urisToProcess = selectedUris || (_uri ? [_uri] : []);
-         await processFiles('Install files', urisToProcess, async (client, filePath) => {
+         await processFiles('Install files', urisToProcess, async (authorClient, publishClient, filePath) => {
             const ext = path.extname(filePath).toLowerCase();
             if (ext === '.zip') {
-                const pkgPath = await client.uploadPackage(filePath, true);
+                const pkgPath = await authorClient.uploadPackage(filePath, true);
                 
                 outputChannel.appendLine(`    Uploading done, starting install for ${pkgPath}...`);
-                await client.installPackage(pkgPath, (msg) => {
+                await authorClient.installPackage(pkgPath, (msg) => {
                     outputChannel.appendLine(msg);
                 });
             } else if (ext === '.jar') {
-                await client.installBundle(filePath);
+                await authorClient.installBundle(filePath);
             } else {
                  throw new Error('Unsupported check extension.');
             }
@@ -106,12 +122,59 @@ export function activate(context: vscode.ExtensionContext) {
     // Backup Command
     let backupCmd = vscode.commands.registerCommand('aem-bulk-installer.backup', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
          const urisToProcess = selectedUris || (_uri ? [_uri] : []);
-         await processFiles('Backup packages', urisToProcess, async (client, filePath, outputDir) => {
-             await backupPackage(client, filePath, outputDir);
+         await processFiles('Backup packages', urisToProcess, async (authorClient, publishClient, filePath, outputDir) => {
+              await backupPackage(authorClient, filePath, outputDir);
          });
     });
 
-    context.subscriptions.push(uploadCmd, installCmd, backupCmd);
+    // Replicate Command
+    let replicateCmd = vscode.commands.registerCommand('aem-bulk-installer.replicate', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
+        const urisToProcess = selectedUris || (_uri ? [_uri] : []);
+        await processFiles('Replicate files', urisToProcess, async (authorClient, publishClient, filePath) => {
+            const ext = path.extname(filePath).toLowerCase();
+            if (ext === '.zip') {
+                outputChannel.appendLine(`    Uploading package to Author...`);
+                const pkgPath = await authorClient.uploadPackage(filePath, true);
+                outputChannel.appendLine(`    Uploading done, starting replication for ${pkgPath}...`);
+                await authorClient.replicatePackage(pkgPath);
+            } else if (ext === '.jar') {
+                outputChannel.appendLine(`    Installing bundle to Publish...`);
+                await publishClient.installBundle(filePath);
+            } else {
+                throw new Error('Unsupported check extension.');
+            }
+        });
+    });
+
+    // Install + Replicate Command
+    let installReplicateCmd = vscode.commands.registerCommand('aem-bulk-installer.install-replicate', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
+        const urisToProcess = selectedUris || (_uri ? [_uri] : []);
+        await processFiles('Install + Replicate files', urisToProcess, async (authorClient, publishClient, filePath) => {
+            const ext = path.extname(filePath).toLowerCase();
+            if (ext === '.zip') {
+                outputChannel.appendLine(`    Uploading package to Author...`);
+                const pkgPath = await authorClient.uploadPackage(filePath, true);
+                
+                outputChannel.appendLine(`    Uploading done, starting install on Author for ${pkgPath}...`);
+                await authorClient.installPackage(pkgPath, (msg) => {
+                    outputChannel.appendLine(msg);
+                });
+                
+                outputChannel.appendLine(`    Starting replication for ${pkgPath}...`);
+                await authorClient.replicatePackage(pkgPath);
+            } else if (ext === '.jar') {
+                outputChannel.appendLine(`    Installing bundle to Author...`);
+                await authorClient.installBundle(filePath);
+                
+                outputChannel.appendLine(`    Installing bundle to Publish...`);
+                await publishClient.installBundle(filePath);
+            } else {
+                throw new Error('Unsupported check extension.');
+            }
+        });
+    });
+
+    context.subscriptions.push(uploadCmd, installCmd, backupCmd, replicateCmd, installReplicateCmd);
 }
 
 export function deactivate() {}

@@ -6,6 +6,8 @@ A powerful Visual Studio Code extension designed for AEM (Adobe Experience Manag
 
 - **Upload & Install Packages**: Quickly deploy multiple `.zip` packages to AEM without leaving VS Code.
 - **Install OSGi Bundles**: Deploys `.jar` bundles directly via the AEM OSGi Console.
+- **Replicate Packages & Bundles**: Trigger replication of packages directly from Author to Publish, or deploy OSGi bundles directly to your Publish instance.
+- **Install & Replicate (Combo Action)**: A combined action to install packages/bundles on the Author instance and simultaneously replicate them to the Publish instance.
 - **Backup Packages**: Modify properties to append a `-backup` version, re-build it on the AEM server, and download the current state into your local workspace.
 - **Bulk Operations**: Select multiple files in your workspace and trigger actions for all of them at once. Visual progress notification tracks the success or failure of each file.
 
@@ -58,11 +60,22 @@ If you prefer to build the extension from source, follow these steps:
 Make sure your AEM server configuration is set up properly.
 1. Go to VS Code **Settings** (`Ctrl+,` or `Cmd+,`).
 2. Search for `AEM Bulk Installer`.
-3. Configure the following options according to your environment:
-   - `Aem Bulk Installer > Server: Url`: The URL of your AEM instance (default: `http://localhost`)
-   - `Aem Bulk Installer > Server: Port`: The HTTP port (default: `4502`)
-   - `Aem Bulk Installer > Server: Username`: The administrator username (default: `admin`)
-   - `Aem Bulk Installer > Server: Password`: The administrator password (default: `admin`)
+3. Configure the settings for your AEM instances:
+   - **Author Settings**:
+     - `Aem Bulk Installer > Author: Url` (Falls back to the legacy `Server: Url` setting if empty)
+     - `Aem Bulk Installer > Author: Port` (Falls back to `Server: Port` if empty)
+     - `Aem Bulk Installer > Author: Username` (Falls back to `Server: Username` if empty)
+     - `Aem Bulk Installer > Author: Password` (Falls back to `Server: Password` if empty)
+   - **Publish Settings** (Used for replication and targeted bundle deployments):
+     - `Aem Bulk Installer > Publish: Url` (Default: `http://localhost`)
+     - `Aem Bulk Installer > Publish: Port` (Default: `4503`)
+     - `Aem Bulk Installer > Publish: Username` (Default: `admin`)
+     - `Aem Bulk Installer > Publish: Password` (Default: `admin`)
+   - **Legacy settings (Fallback)**:
+     - `Aem Bulk Installer > Server: Url` (Default: `http://localhost`)
+     - `Aem Bulk Installer > Server: Port` (Default: `4502`)
+     - `Aem Bulk Installer > Server: Username` (Default: `admin`)
+     - `Aem Bulk Installer > Server: Password` (Default: `admin`)
 
 ## Step-by-Step Usage
 
@@ -74,9 +87,11 @@ Make sure your AEM server configuration is set up properly.
    - For bulk operations, hold down `Ctrl` (or `Cmd` on Mac) and click on multiple `.zip` or `.jar` files.
 5. **Right-Click** any of the selected files to open the context menu.
 6. Look for the `AEM` group at the bottom of the menu and choose one of the available commands:
-   - **AEM: Upload file(s)**: Only uploads the package to the AEM Package Manager (doesn't install).
-   - **AEM: Install file(s)**: Uploads and immediately installs the package or OSGi bundle.
+   - **AEM: Upload file(s)**: Only uploads the package to the AEM Author Package Manager (doesn't install).
+   - **AEM: Install file(s)**: Uploads and immediately installs the package or OSGi bundle on the AEM Author instance.
    - **AEM: Backup package(s)**: Creates a backup clone from AEM (available for `.zip` files only).
+   - **AEM: Replicate file(s)**: Uploads and replicates packages from Author to Publish (`.zip`), or installs OSGi bundles directly to the Publish instance (`.jar`).
+   - **AEM: Install + Replicate file(s)**: Uploads, installs, and replicates packages on both Author and Publish (`.zip`), or installs OSGi bundles on both Author and Publish instances (`.jar`).
 7. Look at the bottom right corner of VS Code to see a native **Progress Notification** window indicating the status of the operation for each file.
 
 ## Requirements
