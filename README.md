@@ -98,3 +98,7 @@ Make sure your AEM server configuration is set up properly.
 
 - VS Code 1.80.0 or higher.
 - A running local AEM instance (AEM 6.5+ or AEM as a Cloud Service SDK) reachable by your system.
+
+## License
+
+This extension is licensed under the terms described in the [LICENSE](./LICENSE) file. Copyright (c) 2024 Akio333.
