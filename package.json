@@ -1,8 +1,8 @@
 {
   "name": "aem-bulk-pkg-install",
   "displayName": "AEM Bulk Package Installer",
-  "description": "Install multiple AEM packages or bundles from local to AEM server.",
-  "version": "0.1.2",
+  "description": "Install multiple AEM packages or bundles from local to multiple AEM environments (local, dev, stage, prod).",
+  "version": "1.0.0",
   "publisher": "Akio333",
   "icon": "icon.png",
   "repository": {
@@ -27,65 +27,96 @@
     "configuration": {
       "title": "AEM Bulk Installer",
       "properties": {
-        "aemBulkInstaller.server.url": {
-          "type": "string",
-          "default": "http://localhost",
-          "description": "URL of the AEM server"
-        },
-        "aemBulkInstaller.server.port": {
-          "type": "string",
-          "default": "4502",
-          "description": "Port of the AEM server"
-        },
-        "aemBulkInstaller.server.username": {
-          "type": "string",
-          "default": "admin",
-          "description": "Username for AEM server"
-        },
-        "aemBulkInstaller.server.password": {
-          "type": "string",
-          "default": "admin",
-          "description": "Password for AEM server"
-        },
-        "aemBulkInstaller.author.url": {
-          "type": "string",
-          "default": "",
-          "description": "URL of the AEM Author instance. If not set, falls back to the old server url setting."
-        },
-        "aemBulkInstaller.author.port": {
-          "type": "string",
-          "default": "",
-          "description": "Port of the AEM Author instance. If not set, falls back to the old server port setting."
-        },
-        "aemBulkInstaller.author.username": {
-          "type": "string",
-          "default": "",
-          "description": "Username for AEM Author instance. If not set, falls back to the old server username setting."
-        },
-        "aemBulkInstaller.author.password": {
-          "type": "string",
-          "default": "",
-          "description": "Password for AEM Author instance. If not set, falls back to the old server password setting."
-        },
-        "aemBulkInstaller.publish.url": {
-          "type": "string",
-          "default": "http://localhost",
-          "description": "URL of the AEM Publish instance"
-        },
-        "aemBulkInstaller.publish.port": {
-          "type": "string",
-          "default": "4503",
-          "description": "Port of the AEM Publish instance"
-        },
-        "aemBulkInstaller.publish.username": {
-          "type": "string",
-          "default": "admin",
-          "description": "Username for AEM Publish instance"
-        },
-        "aemBulkInstaller.publish.password": {
-          "type": "string",
-          "default": "admin",
-          "description": "Password for AEM Publish instance"
+        "aemBulkInstaller.environments": {
+          "type": "array",
+          "description": "Configure AEM environments (Author & Publisher).",
+          "default": [
+            {
+              "name": "local",
+              "isProd": false,
+              "author": {
+                "url": "http://localhost",
+                "port": "4502",
+                "username": "admin",
+                "password": "admin"
+              },
+              "publish": {
+                "url": "http://localhost",
+                "port": "4503",
+                "username": "admin",
+                "password": "admin"
+              }
+            }
+          ],
+          "items": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Environment name (e.g. local, dev, stage, prod)."
+              },
+              "isProd": {
+                "type": "boolean",
+                "default": false,
+                "description": "Mark this environment as a production environment to require confirmation before running actions."
+              },
+              "author": {
+                "type": "object",
+                "description": "AEM Author configuration",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "default": "http://localhost",
+                    "description": "Author instance URL"
+                  },
+                  "port": {
+                    "type": "string",
+                    "default": "4502",
+                    "description": "Author instance port"
+                  },
+                  "username": {
+                    "type": "string",
+                    "default": "admin",
+                    "description": "Author instance username"
+                  },
+                  "password": {
+                    "type": "string",
+                    "default": "admin",
+                    "description": "Author instance password"
+                  }
+                }
+              },
+              "publish": {
+                "type": "object",
+                "description": "AEM Publisher configuration",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "default": "http://localhost",
+                    "description": "Publisher instance URL"
+                  },
+                  "port": {
+                    "type": "string",
+                    "default": "4503",
+                    "description": "Publisher instance port"
+                  },
+                  "username": {
+                    "type": "string",
+                    "default": "admin",
+                    "description": "Publisher instance username"
+                  },
+                  "password": {
+                    "type": "string",
+                    "default": "admin",
+                    "description": "Publisher instance password"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

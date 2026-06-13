@@ -7,29 +7,97 @@ export function activate(context: vscode.ExtensionContext) {
     const outputChannel = vscode.window.createOutputChannel('AEM Bulk Installer');
     context.subscriptions.push(outputChannel);
 
-    const getAuthorConfig = (): AemConfig => {
-        const config = vscode.workspace.getConfiguration('aemBulkInstaller');
-        const defaultUrl = config.get<string>('server.url', 'http://localhost');
-        const defaultPort = config.get<string>('server.port', '4502');
-        const defaultUsername = config.get<string>('server.username', 'admin');
-        const defaultPassword = config.get<string>('server.password', 'admin');
+    interface EnvironmentConfig {
+        name: string;
+        isProd?: boolean;
+        author: AemConfig;
+        publish: AemConfig;
+    }
 
-        return {
-            url: config.get<string>('author.url') || defaultUrl,
-            port: config.get<string>('author.port') || defaultPort,
-            username: config.get<string>('author.username') || defaultUsername,
-            password: config.get<string>('author.password') || defaultPassword
-        };
+    const getEnvironments = (): EnvironmentConfig[] => {
+        const config = vscode.workspace.getConfiguration('aemBulkInstaller');
+        let envs = config.get<EnvironmentConfig[]>('environments') || [];
+        
+        if (envs.length === 0) {
+            envs = [
+                {
+                    name: 'local',
+                    isProd: false,
+                    author: {
+                        url: 'http://localhost',
+                        port: '4502',
+                        username: 'admin',
+                        password: 'admin'
+                    },
+                    publish: {
+                        url: 'http://localhost',
+                        port: '4503',
+                        username: 'admin',
+                        password: 'admin'
+                    }
+                }
+            ];
+        }
+
+        // Apply robust fallbacks for individual fields to prevent undefined errors
+        return envs.map(env => ({
+            name: env.name || 'unnamed',
+            isProd: !!env.isProd,
+            author: {
+                url: env.author?.url || 'http://localhost',
+                port: env.author?.port || '4502',
+                username: env.author?.username || 'admin',
+                password: env.author?.password || 'admin'
+            },
+            publish: {
+                url: env.publish?.url || 'http://localhost',
+                port: env.publish?.port || '4503',
+                username: env.publish?.username || 'admin',
+                password: env.publish?.password || 'admin'
+            }
+        }));
     };
 
-    const getPublishConfig = (): AemConfig => {
-        const config = vscode.workspace.getConfiguration('aemBulkInstaller');
-        return {
-            url: config.get<string>('publish.url', 'http://localhost'),
-            port: config.get<string>('publish.port', '4503'),
-            username: config.get<string>('publish.username', 'admin'),
-            password: config.get<string>('publish.password', 'admin')
-        };
+    const selectEnvironment = async (actionName: string): Promise<EnvironmentConfig | undefined> => {
+        const envs = getEnvironments();
+        if (envs.length === 0) {
+            vscode.window.showErrorMessage('No AEM environments configured.');
+            return undefined;
+        }
+
+        let selectedEnv: EnvironmentConfig;
+
+        if (envs.length === 1) {
+            selectedEnv = envs[0];
+        } else {
+            const items = envs.map(env => ({
+                label: env.name,
+                description: `${env.author.url}:${env.author.port} (Author) | ${env.publish.url}:${env.publish.port} (Publish)${env.isProd ? ' [PROD]' : ''}`,
+                env: env
+            }));
+
+            const selected = await vscode.window.showQuickPick(items, {
+                placeHolder: `Select target environment for '${actionName}'`
+            });
+
+            if (!selected) {
+                return undefined;
+            }
+            selectedEnv = selected.env;
+        }
+
+        if (selectedEnv.isProd) {
+            const confirmation = await vscode.window.showWarningMessage(
+                `Are you sure you want to perform '${actionName}' on the production environment '${selectedEnv.name}'?`,
+                { modal: true },
+                'Yes'
+            );
+            if (confirmation !== 'Yes') {
+                return undefined;
+            }
+        }
+
+        return selectedEnv;
     };
 
     const processFiles = async (
@@ -42,15 +110,20 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        const authorClient = new AemClient(getAuthorConfig());
-        const publishClient = new AemClient(getPublishConfig());
+        const env = await selectEnvironment(actionName);
+        if (!env) {
+            return;
+        }
+
+        const authorClient = new AemClient(env.author);
+        const publishClient = new AemClient(env.publish);
 
         outputChannel.show(true);
-        outputChannel.appendLine(`--- Starting: ${actionName} ---`);
+        outputChannel.appendLine(`--- Starting: ${actionName} on environment [${env.name}] ---`);
 
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: `AEM: ${actionName}`,
+            title: `AEM: ${actionName} (${env.name})`,
             cancellable: false
         }, async (progress) => {
             const total = uris.length;

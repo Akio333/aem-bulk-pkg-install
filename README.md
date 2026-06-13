@@ -9,7 +9,46 @@ A powerful Visual Studio Code extension designed for AEM (Adobe Experience Manag
 - **Replicate Packages & Bundles**: Trigger replication of packages directly from Author to Publish, or deploy OSGi bundles directly to your Publish instance.
 - **Install & Replicate (Combo Action)**: A combined action to install packages/bundles on the Author instance and simultaneously replicate them to the Publish instance.
 - **Backup Packages**: Modify properties to append a `-backup` version, re-build it on the AEM server, and download the current state into your local workspace.
+- **Multi-Environment Support**: Configure multiple AEM environments (e.g. local, dev, stage, prod) and easily select the target environment during deployments.
+- **Production Safeguard**: Mark environments as production (`isProd: true`) to require an explicit confirmation modal before performing any actions.
 - **Bulk Operations**: Select multiple files in your workspace and trigger actions for all of them at once. Visual progress notification tracks the success or failure of each file.
+
+## Before You Start
+
+Make sure your AEM environments are set up properly.
+1. Go to VS Code **Settings** (`Ctrl+,` or `Cmd+,`).
+2. Search for `AEM Bulk Installer`.
+3. Configure your AEM environments under `Aem Bulk Installer: Environments`.
+   - By default, a single environment named `local` is configured pointing to `http://localhost:4502` (Author) and `http://localhost:4503` (Publish).
+   - You can add, edit, rename, or remove environments from the Settings editor.
+   - Each environment includes:
+     - **Name**: The display name of the environment (e.g. `local`, `dev`, `stage`, `prod`).
+     - **Is Prod**: Check this box to mark the environment as production. This triggers a confirmation dialog before any deployment action.
+     - **Author Config**: AEM Author instance connection details (`url`, `port`, `username`, `password`).
+     - **Publish Config**: AEM Publish instance connection details (`url`, `port`, `username`, `password`).
+
+## Step-by-Step Usage
+
+1. Open your code project in VS Code that contains your compiled `.zip` Content Packages or `.jar` OSGi bundles.
+2. Open the **VS Code File Explorer** view.
+3. Locate the files you want to deploy.
+4. **Select File(s)**:
+   - Left-click a single file.
+   - For bulk operations, hold down `Ctrl` (or `Cmd` on Mac) and click on multiple `.zip` or `.jar` files.
+5. **Right-Click** any of the selected files to open the context menu.
+6. Look for the `AEM` group at the bottom of the menu and choose one of the available commands:
+   - **AEM: Upload file(s)**: Only uploads the package to the AEM Author Package Manager (doesn't install).
+   - **AEM: Install file(s)**: Uploads and immediately installs the package or OSGi bundle on the AEM Author instance.
+   - **AEM: Backup package(s)**: Creates a backup clone from AEM (available for `.zip` files only).
+   - **AEM: Replicate file(s)**: Uploads and replicates packages from Author to Publish (`.zip`), or installs OSGi bundles directly to the Publish instance (`.jar`).
+   - **AEM: Install + Replicate file(s)**: Uploads, installs, and replicates packages on both Author and Publish (`.zip`), or installs OSGi bundles on both Author and Publish instances (`.jar`).
+7. **Select Target Environment**: If multiple AEM environments are configured, you will be prompted to select the target environment via a QuickPick list. If the selected environment is marked as production (`isProd: true`), a modal confirmation prompt will appear asking for confirmation before any action is performed.
+8. Look at the bottom right corner of VS Code to see a native **Progress Notification** window indicating the status of the operation for each file.
+
+## Requirements
+
+- VS Code 1.80.0 or higher.
+- A running local AEM instance (AEM 6.5+ or AEM as a Cloud Service SDK) reachable by your system.
 
 ## Installation
 
@@ -55,50 +94,6 @@ If you prefer to build the extension from source, follow these steps:
 4. **Install the generated `.vsix`**:
    Install the generated `.vsix` file into your VS Code environment via the **Install from VSIX...** option.
 
-## Before You Start
-
-Make sure your AEM server configuration is set up properly.
-1. Go to VS Code **Settings** (`Ctrl+,` or `Cmd+,`).
-2. Search for `AEM Bulk Installer`.
-3. Configure the settings for your AEM instances:
-   - **Author Settings**:
-     - `Aem Bulk Installer > Author: Url` (Falls back to the legacy `Server: Url` setting if empty)
-     - `Aem Bulk Installer > Author: Port` (Falls back to `Server: Port` if empty)
-     - `Aem Bulk Installer > Author: Username` (Falls back to `Server: Username` if empty)
-     - `Aem Bulk Installer > Author: Password` (Falls back to `Server: Password` if empty)
-   - **Publish Settings** (Used for replication and targeted bundle deployments):
-     - `Aem Bulk Installer > Publish: Url` (Default: `http://localhost`)
-     - `Aem Bulk Installer > Publish: Port` (Default: `4503`)
-     - `Aem Bulk Installer > Publish: Username` (Default: `admin`)
-     - `Aem Bulk Installer > Publish: Password` (Default: `admin`)
-   - **Legacy settings (Fallback)**:
-     - `Aem Bulk Installer > Server: Url` (Default: `http://localhost`)
-     - `Aem Bulk Installer > Server: Port` (Default: `4502`)
-     - `Aem Bulk Installer > Server: Username` (Default: `admin`)
-     - `Aem Bulk Installer > Server: Password` (Default: `admin`)
-
-## Step-by-Step Usage
-
-1. Open your code project in VS Code that contains your compiled `.zip` Content Packages or `.jar` OSGi bundles.
-2. Open the **VS Code File Explorer** view.
-3. Locate the files you want to deploy.
-4. **Select File(s)**:
-   - Left-click a single file.
-   - For bulk operations, hold down `Ctrl` (or `Cmd` on Mac) and click on multiple `.zip` or `.jar` files.
-5. **Right-Click** any of the selected files to open the context menu.
-6. Look for the `AEM` group at the bottom of the menu and choose one of the available commands:
-   - **AEM: Upload file(s)**: Only uploads the package to the AEM Author Package Manager (doesn't install).
-   - **AEM: Install file(s)**: Uploads and immediately installs the package or OSGi bundle on the AEM Author instance.
-   - **AEM: Backup package(s)**: Creates a backup clone from AEM (available for `.zip` files only).
-   - **AEM: Replicate file(s)**: Uploads and replicates packages from Author to Publish (`.zip`), or installs OSGi bundles directly to the Publish instance (`.jar`).
-   - **AEM: Install + Replicate file(s)**: Uploads, installs, and replicates packages on both Author and Publish (`.zip`), or installs OSGi bundles on both Author and Publish instances (`.jar`).
-7. Look at the bottom right corner of VS Code to see a native **Progress Notification** window indicating the status of the operation for each file.
-
-## Requirements
-
-- VS Code 1.80.0 or higher.
-- A running local AEM instance (AEM 6.5+ or AEM as a Cloud Service SDK) reachable by your system.
-
 ## License
 
-This extension is licensed under the terms described in the [LICENSE](./LICENSE) file. Copyright (c) 2024 Akio333.
+This extension is licensed under the terms described in the [LICENSE](./LICENSE) file.
