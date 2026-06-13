@@ -2,7 +2,7 @@
   "name": "aem-bulk-pkg-install",
   "displayName": "AEM Bulk Package Installer",
   "description": "Install multiple AEM packages or bundles from local to AEM server.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "Akio333",
   "icon": "icon.png",
   "repository": {
