@@ -1,8 +1,8 @@
 {
   "name": "aem-bulk-pkg-install",
   "displayName": "AEM Bulk Package Installer",
-  "description": "Install multiple AEM packages or bundles from local to multiple AEM environments (local, dev, stage, prod).",
-  "version": "1.0.0",
+  "description": "Install AEM packages/bundles, and create, build, or replicate custom AEM content packages directly from JCR paths selected in the editor.",
+  "version": "1.1.0",
   "publisher": "Akio333",
   "icon": "icon.png",
   "repository": {
@@ -20,7 +20,10 @@
     "onCommand:aem-bulk-installer.install",
     "onCommand:aem-bulk-installer.backup",
     "onCommand:aem-bulk-installer.replicate",
-    "onCommand:aem-bulk-installer.install-replicate"
+    "onCommand:aem-bulk-installer.install-replicate",
+    "onCommand:aem-bulk-installer.create-package",
+    "onCommand:aem-bulk-installer.create-build-package",
+    "onCommand:aem-bulk-installer.create-build-replicate-package"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -140,6 +143,18 @@
       {
         "command": "aem-bulk-installer.install-replicate",
         "title": "AEM: Install + Replicate file(s)"
+      },
+      {
+        "command": "aem-bulk-installer.create-package",
+        "title": "AEM: Create Package"
+      },
+      {
+        "command": "aem-bulk-installer.create-build-package",
+        "title": "AEM: Create + Build Package"
+      },
+      {
+        "command": "aem-bulk-installer.create-build-replicate-package",
+        "title": "AEM: Create + Build + Replicate Package"
       }
     ],
     "menus": {
@@ -168,6 +183,23 @@
           "command": "aem-bulk-installer.install-replicate",
           "when": "resourceExtname == .zip || resourceExtname == .jar",
           "group": "aem@5"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "aem-bulk-installer.create-package",
+          "when": "editorHasSelection",
+          "group": "aem-create@1"
+        },
+        {
+          "command": "aem-bulk-installer.create-build-package",
+          "when": "editorHasSelection",
+          "group": "aem-create@2"
+        },
+        {
+          "command": "aem-bulk-installer.create-build-replicate-package",
+          "when": "editorHasSelection",
+          "group": "aem-create@3"
         }
       ]
     }

@@ -247,7 +247,168 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-    context.subscriptions.push(uploadCmd, installCmd, backupCmd, replicateCmd, installReplicateCmd);
+    const handleCreatePackage = async (action: 'create' | 'build' | 'replicate') => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage('No active editor.');
+            return;
+        }
+
+        const selection = editor.selection;
+        const text = editor.document.getText(selection);
+        if (!text.trim()) {
+            vscode.window.showErrorMessage('No text selected.');
+            return;
+        }
+
+        const paths = text.split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(line => line.length > 0 && line.startsWith('/'));
+
+        if (paths.length === 0) {
+            vscode.window.showErrorMessage("No valid JCR paths (starting with '/') found in selection.");
+            return;
+        }
+
+        // Prompt for Package Name
+        const packageName = await vscode.window.showInputBox({
+            prompt: 'Enter package name',
+            placeHolder: 'e.g. my-content-package',
+            validateInput: (value) => {
+                if (!value || value.trim().length === 0) {
+                    return 'Package name is required';
+                }
+                if (!/^[a-zA-Z0-9_\-]+$/.test(value)) {
+                    return 'Package name can only contain alphanumeric characters, underscores, and hyphens';
+                }
+                return null;
+            }
+        });
+        if (!packageName) {
+            return;
+        }
+
+        // Prompt for Category (default: 'my_packages')
+        const category = await vscode.window.showInputBox({
+            prompt: 'Enter category (group name)',
+            value: 'my_packages',
+            validateInput: (value) => {
+                if (!value || value.trim().length === 0) {
+                    return 'Category is required';
+                }
+                return null;
+            }
+        });
+        if (!category) {
+            return;
+        }
+
+        // Prompt for Version (default: '1.0.0')
+        const version = await vscode.window.showInputBox({
+            prompt: 'Enter version',
+            value: '1.0.0',
+            validateInput: (value) => {
+                if (!value || value.trim().length === 0) {
+                    return 'Version is required';
+                }
+                return null;
+            }
+        });
+        if (!version) {
+            return;
+        }
+
+        // Determine action name for the environment prompt and logs
+        const actionLabel = action === 'create' ? 'Create package' 
+                            : action === 'build' ? 'Create + Build package' 
+                            : 'Create + Build + Replicate package';
+
+        const env = await selectEnvironment(actionLabel);
+        if (!env) {
+            return;
+        }
+
+        const authorClient = new AemClient(env.author);
+
+        outputChannel.show(true);
+        outputChannel.appendLine(`--- Starting: ${actionLabel} on environment [${env.name}] ---`);
+        outputChannel.appendLine(`Package: ${category}/${packageName}-${version}`);
+        outputChannel.appendLine(`Paths:`);
+        paths.forEach(p => outputChannel.appendLine(`  - ${p}`));
+
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: `AEM: ${actionLabel} (${env.name})`,
+            cancellable: false
+        }, async (progress) => {
+            try {
+                // Step 1: Create Package
+                progress.report({ message: 'Creating package...' });
+                outputChannel.appendLine(`[1/3] Creating package on Author...`);
+                const pkgPath = await authorClient.createPackage(packageName, category, version);
+                outputChannel.appendLine(`SUCCESS: Package created at: ${pkgPath}`);
+
+                // Step 2: Update Filters
+                progress.report({ message: 'Updating package filters...' });
+                outputChannel.appendLine(`[2/3] Updating package filters...`);
+                await authorClient.updatePackageFilters(pkgPath, packageName, category, version, paths);
+                outputChannel.appendLine(`SUCCESS: Package filters updated.`);
+
+                // The package path after updatePackageFilters might have the version appended by AEM
+                const finalPkgPath = version ? `/etc/packages/${category}/${packageName}-${version}.zip` : pkgPath;
+
+                // Step 3 (Optional): Build Package
+                if (action === 'build' || action === 'replicate') {
+                    progress.report({ message: 'Building package...' });
+                    outputChannel.appendLine(`[3/3] Building package on Author...`);
+                    await authorClient.buildPackage(finalPkgPath);
+                    outputChannel.appendLine(`SUCCESS: Package built successfully.`);
+                }
+
+                // Step 4 (Optional): Replicate Package
+                if (action === 'replicate') {
+                    progress.report({ message: 'Replicating package...' });
+                    outputChannel.appendLine(`[Replicate] Replicating package to Publish...`);
+                    await authorClient.replicatePackage(finalPkgPath);
+                    outputChannel.appendLine(`SUCCESS: Package replicated successfully.`);
+                }
+
+                outputChannel.appendLine(`--- Completed ${actionLabel}: SUCCESS ---\n`);
+                vscode.window.showInformationMessage(`Successfully completed ${actionLabel} for package ${packageName}.`);
+            } catch (error: any) {
+                outputChannel.appendLine(`FAILED: ${error.message}`);
+                outputChannel.appendLine(`--- Completed ${actionLabel}: FAILED ---\n`);
+                vscode.window.showErrorMessage(`Failed to perform '${actionLabel}': ${error.message}`);
+            }
+        });
+    };
+
+    // Create Package Command
+    let createPkgCmd = vscode.commands.registerCommand('aem-bulk-installer.create-package', async () => {
+        await handleCreatePackage('create');
+    });
+
+    // Create + Build Package Command
+    let createBuildPkgCmd = vscode.commands.registerCommand('aem-bulk-installer.create-build-package', async () => {
+        await handleCreatePackage('build');
+    });
+
+    // Create + Build + Replicate Package Command
+    let createBuildReplicatePkgCmd = vscode.commands.registerCommand('aem-bulk-installer.create-build-replicate-package', async () => {
+        await handleCreatePackage('replicate');
+    });
+
+    context.subscriptions.push(
+        uploadCmd,
+        installCmd,
+        backupCmd,
+        replicateCmd,
+        installReplicateCmd,
+        createPkgCmd,
+        createBuildPkgCmd,
+        createBuildReplicatePkgCmd
+    );
 }
 
 export function deactivate() {}
+

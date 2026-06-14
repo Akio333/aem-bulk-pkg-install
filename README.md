@@ -1,6 +1,6 @@
 # AEM Bulk Package Installer
 
-A powerful Visual Studio Code extension designed for AEM (Adobe Experience Manager) developers. It allows you to select one or multiple AEM packages (`.zip`) or OSGi bundles (`.jar`) directly from the VS Code File Explorer and easily upload, install, or backup them to your local AEM server.
+A powerful Visual Studio Code extension designed for AEM (Adobe Experience Manager) developers. It allows you to select one or multiple AEM packages (`.zip`) or OSGi bundles (`.jar`) directly from the VS Code File Explorer and easily upload, install, or backup them to your local AEM server, or select paths in any active editor to create, build, and replicate packages on demand.
 
 ## Features
 
@@ -8,6 +8,7 @@ A powerful Visual Studio Code extension designed for AEM (Adobe Experience Manag
 - **Install OSGi Bundles**: Deploys `.jar` bundles directly via the AEM OSGi Console.
 - **Replicate Packages & Bundles**: Trigger replication of packages directly from Author to Publish, or deploy OSGi bundles directly to your Publish instance.
 - **Install & Replicate (Combo Action)**: A combined action to install packages/bundles on the Author instance and simultaneously replicate them to the Publish instance.
+- **Create & Build Packages from Editor**: Select a list of JCR paths (one per line) in any active editor and right-click to instantly create, build, or replicate custom AEM content packages on your target environments.
 - **Backup Packages**: Modify properties to append a `-backup` version, re-build it on the AEM server, and download the current state into your local workspace.
 - **Multi-Environment Support**: Configure multiple AEM environments (e.g. local, dev, stage, prod) and easily select the target environment during deployments.
 - **Production Safeguard**: Mark environments as production (`isProd: true`) to require an explicit confirmation modal before performing any actions.
@@ -44,6 +45,22 @@ Make sure your AEM environments are set up properly.
    - **AEM: Install + Replicate file(s)**: Uploads, installs, and replicates packages on both Author and Publish (`.zip`), or installs OSGi bundles on both Author and Publish instances (`.jar`).
 7. **Select Target Environment**: If multiple AEM environments are configured, you will be prompted to select the target environment via a QuickPick list. If the selected environment is marked as production (`isProd: true`), a modal confirmation prompt will appear asking for confirmation before any action is performed.
 8. Look at the bottom right corner of VS Code to see a native **Progress Notification** window indicating the status of the operation for each file.
+
+### Creating Packages from Editor Selection
+
+1. Open any text file or code file containing AEM JCR paths listed one per line (e.g., `/content/wknd`, `/content/dam/wknd`).
+2. Select the paths you want to include in your package.
+3. Right-click the selected text to open the editor context menu.
+4. Choose one of the available commands:
+   - **AEM: Create Package**: Creates the package container on the Author instance and updates its filters with the selected paths.
+   - **AEM: Create + Build Package**: Creates the package, updates the filters, and runs a build.
+   - **AEM: Create + Build + Replicate Package**: Creates the package, updates the filters, builds it, and replicates it to the Publish instance.
+5. Complete the input prompts when prompted:
+   - **Package Name**: The name of the package.
+   - **Category (Group)**: The group name (defaults to `my_packages`).
+   - **Version**: The package version (defaults to `1.0.0`).
+6. Select your target AEM environment to execute the actions.
+
 
 ## Requirements
 

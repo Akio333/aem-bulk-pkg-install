@@ -195,4 +195,48 @@ export class AemClient {
              throw new Error(`Bundle install failed: ${response.statusText}`);
         }
     }
+
+    async createPackage(packageName: string, groupName: string, version: string): Promise<string> {
+        const url = `/crx/packmgr/service/.json/etc/packages/${groupName}/${packageName}${version ? '-' + version : ''}.zip?cmd=create`;
+        const params = new URLSearchParams();
+        params.append('packageName', packageName);
+        params.append('groupName', groupName);
+        if (version) {
+            params.append('version', version);
+        }
+
+        const response = await this.client.post(url, params);
+
+        if (response.data && response.data.success) {
+            return response.data.path || `/etc/packages/${groupName}/${packageName}${version ? '-' + version : ''}.zip`;
+        } else {
+            throw new Error(`Create package failed: ${response.data ? response.data.msg : response.statusText}`);
+        }
+    }
+
+    async updatePackageFilters(packagePath: string, packageName: string, groupName: string, version: string, paths: string[]): Promise<void> {
+        const formData = new FormData();
+        formData.append('path', packagePath);
+        formData.append('packageName', packageName);
+        formData.append('groupName', groupName);
+        if (version) {
+            formData.append('version', version);
+        }
+
+        const filterArray = paths.map(p => ({
+            root: p,
+            rules: []
+        }));
+        formData.append('filter', JSON.stringify(filterArray));
+        formData.append('_charset_', 'UTF-8');
+
+        const response = await this.client.post('/crx/packmgr/update.jsp', formData, {
+            headers: formData.getHeaders()
+        });
+
+        if (response.status !== 200) {
+            throw new Error(`Update package filters failed: Status ${response.status} ${response.statusText}`);
+        }
+    }
 }
+
