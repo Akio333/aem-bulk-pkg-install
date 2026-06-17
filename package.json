@@ -32,7 +32,7 @@
       "properties": {
         "aemBulkInstaller.environments": {
           "type": "array",
-          "description": "Configure AEM environments (Author & Publisher).",
+          "description": "Configure AEM author environments.",
           "default": [
             {
               "name": "local",
