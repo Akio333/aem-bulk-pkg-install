@@ -144,7 +144,7 @@
         },
         {
           "command": "aem-bulk-installer.replicate",
-          "when": "resourceExtname == .zip || resourceExtname == .jar",
+          "when": "resourceExtname == .zip",
           "group": "aem@4"
         },
         {
