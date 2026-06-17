@@ -6,8 +6,8 @@ A powerful Visual Studio Code extension designed for AEM (Adobe Experience Manag
 
 - **Upload & Install Packages**: Quickly deploy multiple `.zip` packages to AEM without leaving VS Code.
 - **Install OSGi Bundles**: Deploys `.jar` bundles directly via the AEM OSGi Console.
-- **Replicate Packages & Bundles**: Trigger replication of packages directly from Author to Publish, or deploy OSGi bundles directly to your Publish instance.
-- **Install & Replicate (Combo Action)**: A combined action to install packages/bundles on the Author instance and simultaneously replicate them to the Publish instance.
+- **Replicate Packages**: Trigger replication of packages from Author to your designated replication agents.
+- **Install & Replicate (Combo Action)**: A combined action to install packages/bundles on the Author instance and simultaneously trigger replication for packages.
 - **Create & Build Packages from Editor**: Select a list of JCR paths (one per line) in any active editor and right-click to instantly create, build, or replicate custom AEM content packages on your target environments.
 - **Backup Packages**: Modify properties to append a `-backup` version, re-build it on the AEM server, and download the current state into your local workspace.
 - **Multi-Environment Support**: Configure multiple AEM environments (e.g. local, dev, stage, prod) and easily select the target environment during deployments.
@@ -20,13 +20,12 @@ Make sure your AEM environments are set up properly.
 1. Go to VS Code **Settings** (`Ctrl+,` or `Cmd+,`).
 2. Search for `AEM Bulk Installer`.
 3. Configure your AEM environments under `Aem Bulk Installer: Environments`.
-   - By default, a single environment named `local` is configured pointing to `http://localhost:4502` (Author) and `http://localhost:4503` (Publish).
+   - By default, a single environment named `local` is configured pointing to `http://localhost:4502` (Author).
    - You can add, edit, rename, or remove environments from the Settings editor.
    - Each environment includes:
-     - **Name**: The display name of the environment (e.g. `local`, `dev`, `stage`, `prod`).
-     - **Is Prod**: Check this box to mark the environment as production. This triggers a confirmation dialog before any deployment action.
+     - `name`: Environment name (e.g. `local`, `dev`, `stage`, `prod`).
+     - `isProd`: Boolean flag. If set to `true`, the extension will prompt for confirmation before executing any actions against this environment.
      - **Author Config**: AEM Author instance connection details (`url`, `port`, `username`, `password`).
-     - **Publish Config**: AEM Publish instance connection details (`url`, `port`, `username`, `password`).
 
 ## Step-by-Step Usage
 
@@ -41,8 +40,8 @@ Make sure your AEM environments are set up properly.
    - **AEM: Upload file(s)**: Only uploads the package to the AEM Author Package Manager (doesn't install).
    - **AEM: Install file(s)**: Uploads and immediately installs the package or OSGi bundle on the AEM Author instance.
    - **AEM: Backup package(s)**: Creates a backup clone from AEM (available for `.zip` files only).
-   - **AEM: Replicate file(s)**: Uploads and replicates packages from Author to Publish (`.zip`), or installs OSGi bundles directly to the Publish instance (`.jar`).
-   - **AEM: Install + Replicate file(s)**: Uploads, installs, and replicates packages on both Author and Publish (`.zip`), or installs OSGi bundles on both Author and Publish instances (`.jar`).
+   - **AEM: Replicate file(s)**: Uploads and replicates packages from Author (`.zip`).
+   - **AEM: Install + Replicate file(s)**: Uploads, installs, and replicates packages on Author (`.zip`). For OSGi bundles (`.jar`), it only installs on Author.
 7. **Select Target Environment**: If multiple AEM environments are configured, you will be prompted to select the target environment via a QuickPick list. If the selected environment is marked as production (`isProd: true`), a modal confirmation prompt will appear asking for confirmation before any action is performed.
 8. Look at the bottom right corner of VS Code to see a native **Progress Notification** window indicating the status of the operation for each file.
 
