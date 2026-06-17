@@ -11,7 +11,6 @@ export function activate(context: vscode.ExtensionContext) {
         name: string;
         isProd?: boolean;
         author: AemConfig;
-        publish: AemConfig;
     }
 
     const getEnvironments = (): EnvironmentConfig[] => {
@@ -28,12 +27,6 @@ export function activate(context: vscode.ExtensionContext) {
                         port: '4502',
                         username: 'admin',
                         password: 'admin'
-                    },
-                    publish: {
-                        url: 'http://localhost',
-                        port: '4503',
-                        username: 'admin',
-                        password: 'admin'
                     }
                 }
             ];
@@ -48,12 +41,6 @@ export function activate(context: vscode.ExtensionContext) {
                 port: env.author?.port || '4502',
                 username: env.author?.username || 'admin',
                 password: env.author?.password || 'admin'
-            },
-            publish: {
-                url: env.publish?.url || 'http://localhost',
-                port: env.publish?.port || '4503',
-                username: env.publish?.username || 'admin',
-                password: env.publish?.password || 'admin'
             }
         }));
     };
@@ -72,7 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
         } else {
             const items = envs.map(env => ({
                 label: env.name,
-                description: `${env.author.url}:${env.author.port} (Author) | ${env.publish.url}:${env.publish.port} (Publish)${env.isProd ? ' [PROD]' : ''}`,
+                description: `${env.author.url}:${env.author.port} (Author)${env.isProd ? ' [PROD]' : ''}`,
                 env: env
             }));
 
@@ -103,7 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
     const processFiles = async (
         actionName: string,
         uris: vscode.Uri[],
-        action: (authorClient: AemClient, publishClient: AemClient, filePath: string, outputDir: string) => Promise<void>
+        action: (authorClient: AemClient, filePath: string, outputDir: string) => Promise<void>
     ) => {
         if (!uris || uris.length === 0) {
             vscode.window.showWarningMessage('No files selected.');
@@ -116,7 +103,6 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         const authorClient = new AemClient(env.author);
-        const publishClient = new AemClient(env.publish);
 
         outputChannel.show(true);
         outputChannel.appendLine(`--- Starting: ${actionName} on environment [${env.name}] ---`);
@@ -137,7 +123,7 @@ export function activate(context: vscode.ExtensionContext) {
                 outputChannel.appendLine(`[${i + 1}/${total}] Processing: ${fileName}...`);
                 
                 try {
-                    await action(authorClient, publishClient, fsPath, path.dirname(fsPath));
+                    await action(authorClient, fsPath, path.dirname(fsPath));
                     successCount++;
                     outputChannel.appendLine(`[${i + 1}/${total}] SUCCESS: ${fileName}`);
                 } catch (error: any) {
@@ -160,7 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Upload Command
     let uploadCmd = vscode.commands.registerCommand('aem-bulk-installer.upload', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
         const urisToProcess = selectedUris || (_uri ? [_uri] : []);
-        await processFiles('Upload files', urisToProcess, async (authorClient, publishClient, filePath) => {
+        await processFiles('Upload files', urisToProcess, async (authorClient, filePath) => {
             const ext = path.extname(filePath).toLowerCase();
             if (ext === '.zip') {
                 await authorClient.uploadPackage(filePath, true);
@@ -175,7 +161,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Install Command
     let installCmd = vscode.commands.registerCommand('aem-bulk-installer.install', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
          const urisToProcess = selectedUris || (_uri ? [_uri] : []);
-         await processFiles('Install files', urisToProcess, async (authorClient, publishClient, filePath) => {
+         await processFiles('Install files', urisToProcess, async (authorClient, filePath) => {
             const ext = path.extname(filePath).toLowerCase();
             if (ext === '.zip') {
                 const pkgPath = await authorClient.uploadPackage(filePath, true);
@@ -195,7 +181,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Backup Command
     let backupCmd = vscode.commands.registerCommand('aem-bulk-installer.backup', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
          const urisToProcess = selectedUris || (_uri ? [_uri] : []);
-         await processFiles('Backup packages', urisToProcess, async (authorClient, publishClient, filePath, outputDir) => {
+         await processFiles('Backup packages', urisToProcess, async (authorClient, filePath, outputDir) => {
               await backupPackage(authorClient, filePath, outputDir);
          });
     });
@@ -203,7 +189,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Replicate Command
     let replicateCmd = vscode.commands.registerCommand('aem-bulk-installer.replicate', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
         const urisToProcess = selectedUris || (_uri ? [_uri] : []);
-        await processFiles('Replicate files', urisToProcess, async (authorClient, publishClient, filePath) => {
+        await processFiles('Replicate files', urisToProcess, async (authorClient, filePath) => {
             const ext = path.extname(filePath).toLowerCase();
             if (ext === '.zip') {
                 outputChannel.appendLine(`    Uploading package to Author...`);
@@ -211,8 +197,7 @@ export function activate(context: vscode.ExtensionContext) {
                 outputChannel.appendLine(`    Uploading done, starting replication for ${pkgPath}...`);
                 await authorClient.replicatePackage(pkgPath);
             } else if (ext === '.jar') {
-                outputChannel.appendLine(`    Installing bundle to Publish...`);
-                await publishClient.installBundle(filePath);
+                throw new Error('Direct replication of OSGi bundles (.jar) to Publish is no longer supported.');
             } else {
                 throw new Error('Unsupported check extension.');
             }
@@ -222,7 +207,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Install + Replicate Command
     let installReplicateCmd = vscode.commands.registerCommand('aem-bulk-installer.install-replicate', async (_uri: vscode.Uri, selectedUris: vscode.Uri[]) => {
         const urisToProcess = selectedUris || (_uri ? [_uri] : []);
-        await processFiles('Install + Replicate files', urisToProcess, async (authorClient, publishClient, filePath) => {
+        await processFiles('Install + Replicate files', urisToProcess, async (authorClient, filePath) => {
             const ext = path.extname(filePath).toLowerCase();
             if (ext === '.zip') {
                 outputChannel.appendLine(`    Uploading package to Author...`);
@@ -239,8 +224,7 @@ export function activate(context: vscode.ExtensionContext) {
                 outputChannel.appendLine(`    Installing bundle to Author...`);
                 await authorClient.installBundle(filePath);
                 
-                outputChannel.appendLine(`    Installing bundle to Publish...`);
-                await publishClient.installBundle(filePath);
+                outputChannel.appendLine(`    Note: Direct replication of OSGi bundles (.jar) to Publish is no longer supported.`);
             } else {
                 throw new Error('Unsupported check extension.');
             }

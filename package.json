@@ -42,12 +42,6 @@
                 "port": "4502",
                 "username": "admin",
                 "password": "admin"
-              },
-              "publish": {
-                "url": "http://localhost",
-                "port": "4503",
-                "username": "admin",
-                "password": "admin"
               }
             }
           ],
@@ -89,32 +83,6 @@
                     "type": "string",
                     "default": "admin",
                     "description": "Author instance password"
-                  }
-                }
-              },
-              "publish": {
-                "type": "object",
-                "description": "AEM Publisher configuration",
-                "properties": {
-                  "url": {
-                    "type": "string",
-                    "default": "http://localhost",
-                    "description": "Publisher instance URL"
-                  },
-                  "port": {
-                    "type": "string",
-                    "default": "4503",
-                    "description": "Publisher instance port"
-                  },
-                  "username": {
-                    "type": "string",
-                    "default": "admin",
-                    "description": "Publisher instance username"
-                  },
-                  "password": {
-                    "type": "string",
-                    "default": "admin",
-                    "description": "Publisher instance password"
                   }
                 }
               }
